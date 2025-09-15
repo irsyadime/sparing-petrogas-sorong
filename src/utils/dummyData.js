@@ -1,0 +1,17 @@
+export const tableData = [
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.08, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+  { datetime: '2023-10-01 10:00', debit: 0.05, suhu: 26, ph: 7.67, cod: 7.67, nh3n: 7.67 },
+]
