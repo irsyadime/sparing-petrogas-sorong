@@ -42,14 +42,17 @@
           </v-col>
           <v-col cols="4">
             <div class="d-flex justify-end pr-3">
-              <v-btn size="x-large" color="#61c134" class="btn-search">Settings</v-btn>
+              <v-btn size="large" color="#61c134" class="btn-search" @click="openDialog">
+                <v-icon icon="mdi-cog" class="mr-2" />
+                Settings
+              </v-btn>
             </div>
           </v-col>
         </v-row>
         <div class="pa-5 w-100">
           <v-data-table
             :headers="headers"
-            :items="alarms"
+            :items="processedData"
             class="elevation-3"
             v-model:page="page"
             :items-per-page="itemPerPage"
@@ -78,17 +81,49 @@
         </div>
       </v-card>
     </v-container>
+    <v-dialog v-model="dialog" max-width="600px">
+      <v-card>
+        <v-card-title class="font-weight-bold">Alarm Settings</v-card-title>
+        <v-card-text>
+          <v-row>
+            <v-col v-for="param in Object.keys(tempSettings)" :key="param" cols="12" md="6">
+              <v-card variant="outlined" class="pa-2">
+                <strong class="text-capitalize">{{ param }}</strong>
+                <v-text-field
+                  v-model.number="tempSettings[param].low"
+                  label="Low"
+                  type="number"
+                  density="compact"
+                />
+                <v-text-field
+                  v-model.number="tempSettings[param].high"
+                  label="High"
+                  type="number"
+                  density="compact"
+                />
+              </v-card>
+            </v-col>
+          </v-row>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn text @click="cancelDialog">Cancel</v-btn>
+          <v-btn color="primary" @click="saveSettings">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
 <script setup>
-import { tableData } from '@/utils/dummyData'
-import { ref, computed, inject } from 'vue'
+import { ref, computed, inject, reactive, onMounted } from 'vue'
 
 const dayjs = inject('dayjs')
 const itemPerPage = ref(5)
 const page = ref(1)
 const menu = ref(false)
+const dialog = ref(false)
+const tempSettings = ref({})
 const selectedDate = ref(null)
 const formattedDate = computed({
   get: () => (selectedDate.value ? dayjs(selectedDate.value).format('DD-MMMM-YYYY') : ''),
@@ -99,44 +134,57 @@ const formattedDate = computed({
   },
 })
 
+const defaultSettings = {
+  flow: { low: 10, high: 100 },
+  ph: { low: 6.5, high: 8.5 },
+  cod: { low: 20, high: 80 },
+  nh3n: { low: 1, high: 5 },
+  temp: { low: 20, high: 35 },
+}
+
+const alarmSettings = ref({ ...defaultSettings })
+
+onMounted(() => {
+  const saved = localStorage.getItem('alarmSettings')
+  if (saved) {
+    alarmSettings.value = JSON.parse(saved)
+  } else {
+    localStorage.setItem('alarmSettings', JSON.stringify(alarmSettings.value))
+  }
+})
+
 const headers = [
   { title: 'No', key: 'no', width: '50px', align: 'center', sortable: false },
   { title: 'Waktu Alarm', key: 'timestamp' },
-  { title: 'Parameter', key: 'parameter' },
-  { title: 'Nilai Terukur', key: 'value' },
-  { title: 'Status', key: 'status' },
+  { title: 'Parameter', key: 'parameter', sortable: false },
+  { title: 'Nilai Terukur', key: 'value', sortable: false },
+  { title: 'Status', key: 'status', sortable: false },
   // { title: 'Severity', key: 'severity' },
-  { title: 'PIR', key: 'pir' },
-  { title: 'Lokasi', key: 'location' },
+  { title: 'PIR', key: 'pir', sortable: false },
+  { title: 'Lokasi', key: 'location', sortable: false },
 ]
 
-const alarms = ref([
+const tableData = ref([
   {
     timestamp: '2025-09-12 10:30:00',
     parameter: 'pH',
-    value: 9.2,
-    threshold: '6.0 - 9.0',
-    status: 'high',
+    value: 8,
     severity: 'Critical',
     location: 'Outlet 1',
     pir: 1,
   },
   {
     timestamp: '2025-09-12 09:45:00',
-    parameter: 'COD',
-    value: 95,
-    threshold: '< 90',
-    status: 'alarm',
+    parameter: 'cod',
+    value: 40,
     severity: 'Warning',
     location: 'Outlet 2',
     pir: 0,
   },
   {
     timestamp: '2025-09-12 08:20:00',
-    parameter: 'NH3N',
+    parameter: 'nh3n',
     value: 2.1,
-    threshold: '< 2.0',
-    status: 'normal',
     severity: 'Info',
     location: 'Outlet 1',
     pir: 1,
@@ -145,36 +193,47 @@ const alarms = ref([
 
 const pageCount = computed(() => Math.ceil(tableData.length / itemPerPage.value))
 
+const processedData = computed(() => {
+  return tableData.value.map((row) => {
+    const setting = alarmSettings.value[row.parameter.toLowerCase()]
+    let status = 'NORMAL'
+    if (setting) {
+      if (row.value < setting.low) status = 'LOW'
+      else if (row.value > setting.high) status = 'HIGH'
+    }
+    return {
+      ...row,
+      status, // status baru berdasarkan setting
+    }
+  })
+})
+
 const onClear = () => {
   selectedDate.value = null
 }
 
-function getSeverityColor(severity) {
-  switch (severity) {
-    case 'Critical':
-      return 'red'
-    case 'Warning':
-      return 'orange'
-    case 'Info':
-      return 'blue'
-    default:
-      return 'grey'
-  }
-}
-function getStatusColor(status) {
-  switch (status) {
-    case 'high':
-      return 'red'
-    case 'alarm':
-      return 'red'
-    case 'normal':
-      return 'green'
-    default:
-      return 'grey'
-  }
+const getStatusColor = (status) => {
+  if (status === 'HIGH') return 'red'
+  if (status === 'LOW') return 'orange'
+  return 'green'
 }
 const getPirColor = (pir) => {
   return pir == 1 ? 'red' : 'green'
+}
+
+const openDialog = () => {
+  tempSettings.value = JSON.parse(JSON.stringify(alarmSettings.value))
+  dialog.value = true
+}
+
+const cancelDialog = () => {
+  dialog.value = false
+}
+
+const saveSettings = () => {
+  alarmSettings.value = JSON.parse(JSON.stringify(tempSettings.value))
+  localStorage.setItem('alarmSettings', JSON.stringify(alarmSettings.value))
+  dialog.value = false
 }
 </script>
 
