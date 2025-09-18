@@ -10,7 +10,7 @@
           <span class="arrow">{{ dropdownOpen ? '▾' : '▸' }}</span>
         </span>
         <div v-if="dropdownOpen" class="dropdown-menu">
-          <a href="#"><span class="icon">🔓</span> Logout</a>
+          <a @click="logout"><span class="icon">🔓</span> Logout</a>
         </div>
       </div>
     </div>
@@ -19,9 +19,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const route = useRoute()
+const router = useRouter()
+const auth = useAuthStore()
 
 const pageTitle = 'SPARING KLHK DASHBOARD'
 
@@ -37,6 +39,11 @@ window.addEventListener('click', (e) => {
     dropdownOpen.value = false
   }
 })
+
+const logout = () => {
+  auth.logout()
+  router.push('/auth/login')
+}
 </script>
 
 <style scoped>

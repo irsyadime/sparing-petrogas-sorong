@@ -15,16 +15,22 @@
           </span>
         </div>
         <div v-if="openSubmenus[index] && !collapsed" class="submenu">
-          <RouterLink
-            v-for="item in section.children"
-            :key="item.label"
-            :to="item.to"
-            class="nav-sub-item"
-            exact-active-class="active"
-          >
-            <span class="icon">{{ item.icon }}</span>
-            {{ item.label }}
-          </RouterLink>
+          <template v-for="item in section.children" :key="item.label">
+            <RouterLink
+              v-if="item.label !== 'logout'"
+              :to="item.to"
+              class="nav-sub-item"
+              exact-active-class="active"
+            >
+              <span class="icon">{{ item.icon }}</span>
+              {{ item.label }}
+            </RouterLink>
+
+            <div v-else class="nav-sub-item" @click="logout">
+              <span class="icon">{{ item.icon }}</span>
+              {{ item.label }}
+            </div>
+          </template>
         </div>
         <v-divider v-if="openSubmenus[index]" :thickness="2" style="color: black"></v-divider>
       </template>
@@ -33,12 +39,15 @@
 </template>
 
 <script setup>
+import { useAuthStore } from '@/stores/auth'
 import { ref, onMounted } from 'vue'
-import { useRoute, RouterLink } from 'vue-router'
+import { useRoute, RouterLink, useRouter } from 'vue-router'
 
 const route = useRoute()
+const router = useRouter()
 const collapsed = ref(false)
 const openSubmenus = ref({})
+const auth = useAuthStore()
 
 const toggleSidebar = () => {
   collapsed.value = !collapsed.value
@@ -65,10 +74,15 @@ const menuSections = [
     label: 'Account Management',
     children: [
       { icon: '👥', label: 'Manage Users', to: '/setting/manageuser' },
-      { icon: '🚪', label: 'Logout', to: '/auth/logout' },
+      { icon: '🚪', label: 'Logout', to: '/auth/login', type: 'logout' },
     ],
   },
 ]
+
+const logout = () => {
+  auth.logout()
+  router.push('/auth/login')
+}
 
 onMounted(() => {
   menuSections.forEach((section, index) => {
