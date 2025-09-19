@@ -1,6 +1,6 @@
 <template>
   <div class="w-100" :style="{ height: height }">
-    <Line :data="props.chartData" :options="chartOptions" />
+    <Line ref="chartRef" :data="props.chartData" :options="chartOptions" />
   </div>
 </template>
 
@@ -41,7 +41,7 @@ const chartOptions = {
         color: '#00000',
       },
       grid: {
-        color: 'rgba(255, 255, 255, 0.2)',
+        color: 'rgba(0, 0, 0, 0.1)',
       },
     },
   },
