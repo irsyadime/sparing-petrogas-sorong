@@ -27,3 +27,33 @@ npm run dev
 ```sh
 npm run build
 ```
+
+### Dockerfile
+
+```sh
+# build stage
+FROM node:lts-alpine as build-stage
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# production stage
+FROM nginx:stable-alpine as production-stage
+COPY --from=build-stage /app/dist /usr/share/nginx/html
+EXPOSE 8081
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+### Build Docker Image
+
+```sh
+docker build -t vuejs-cookbook/dockerize-vuejs-app .
+```
+
+### Run Container
+
+```sh
+docker run -it -p 8081:80 --rm --name dockerize-vuejs-app-1 vuejs-cookbook/dockerize-vuejs-app
+```
