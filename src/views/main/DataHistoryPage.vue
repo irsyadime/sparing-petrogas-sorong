@@ -171,13 +171,14 @@ async function fetchDataHistory() {
   loading.value = true
 
   try {
+    // Skip cache if it's today
     if (!isToday(dateKey) && Array.isArray(cachedData.value[dateKey])) {
-      //console.log('✅ Using cached data for:', dateKey)
+      console.log('✅ Using cached data for:', dateKey)
       tableData.value = cachedData.value[dateKey]
       return
     }
 
-    //console.log('🌐 Fetching from API for:', dateKey)
+    console.log('🌐 Fetching from API for:', dateKey)
     const res = await fetch('http://rumot-vps.com:1880/data-history', {
       method: 'POST',
       headers: {
@@ -188,8 +189,13 @@ async function fetchDataHistory() {
     })
     if (!res.ok) throw new Error(res.statusText)
     const data = await res.json()
-    cachedData.value[dateKey] = Array.isArray(data) ? data : []
-    tableData.value = cachedData.value[dateKey]
+
+    // ✅ Only cache if it's NOT today
+    if (!isToday(dateKey)) {
+      cachedData.value[dateKey] = Array.isArray(data) ? data : []
+    }
+
+    tableData.value = Array.isArray(data) ? data : []
   } catch (err) {
     console.error('fetchDataHistory error:', err)
   } finally {
