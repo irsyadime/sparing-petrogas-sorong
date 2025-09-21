@@ -85,30 +85,49 @@
       <v-card>
         <v-card-title class="font-weight-bold">Alarm Settings</v-card-title>
         <v-card-text>
-          <v-row>
-            <v-col v-for="param in Object.keys(tempSettings)" :key="param" cols="12" md="6">
-              <v-card variant="outlined" class="pa-2">
-                <strong class="text-capitalize">{{ param }}</strong>
-                <v-text-field
-                  v-model.number="tempSettings[param].low"
-                  label="Low"
-                  type="number"
-                  density="compact"
-                />
-                <v-text-field
-                  v-model.number="tempSettings[param].high"
-                  label="High"
-                  type="number"
-                  density="compact"
-                />
-              </v-card>
-            </v-col>
-          </v-row>
-        </v-card-text>
+  <v-row>
+    <v-col cols="12">
+      <v-select
+        v-model="selectedDevice"
+        :items="deviceOptions"
+        label="Device"
+        variant="outlined"
+        clearable
+        required
+      />
+    </v-col>
+  </v-row>
+  <v-row>
+    <v-col
+      v-for="param in Object.keys(tempSettings)"
+      :key="param"
+      cols="12"
+      md="6"
+    >
+      <v-card variant="outlined" class="pa-2">
+        <strong class="text-capitalize">{{ param }}</strong>
+<v-text-field
+  v-model.number="tempSettings[param].low"
+  label="Low"
+  type="number"
+  density="compact"
+  :error="tempSettings[param].low >= tempSettings[param].high"
+  :error-messages="tempSettings[param].low >= tempSettings[param].high ? 'Low must be less than High' : ''"
+/>
+        <v-text-field
+          v-model.number="tempSettings[param].high"
+          label="High"
+          type="number"
+          density="compact"
+        />
+      </v-card>
+    </v-col>
+  </v-row>
+</v-card-text>
         <v-card-actions>
           <v-spacer />
           <v-btn text @click="cancelDialog">Cancel</v-btn>
-          <v-btn color="primary" @click="saveSettings">Save</v-btn>
+          <v-btn color="primary" :disabled="!isValidSettings" @click="saveSettings">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -116,82 +135,51 @@
 </template>
 
 <script setup>
-import { ref, computed, inject, reactive, onMounted } from 'vue'
+import { ref, computed, inject, onMounted, watch } from 'vue'
 
 const dayjs = inject('dayjs')
+
+// UI state
 const itemPerPage = ref(5)
 const page = ref(1)
 const menu = ref(false)
 const dialog = ref(false)
-const tempSettings = ref({})
 const selectedDate = ref(null)
+const selectedDevice = ref('kmt') // default device
+const tempSettings = ref({})
+const alarmSettings = ref({})
+const deviceOptions = ['kmt', 'matoa']
+const ALARM_API_URL = 'http://rumot-vps.com:1880/alarm-settings'
+
+// Date formatting
 const formattedDate = computed({
-  get: () => (selectedDate.value ? dayjs(selectedDate.value).format('DD-MMMM-YYYY') : ''),
-  set: (val) => {
-    if (!val) {
-      selectedDate.value = null
-    }
-  },
+  get: () => selectedDate.value ? dayjs(selectedDate.value).format('DD-MMMM-YYYY') : '',
+  set: (val) => { if (!val) selectedDate.value = null }
 })
 
-const defaultSettings = {
-  flow: { low: 10, high: 100 },
-  ph: { low: 6.5, high: 8.5 },
-  cod: { low: 20, high: 80 },
-  nh3n: { low: 1, high: 5 },
-  temp: { low: 20, high: 35 },
+const onClear = () => {
+  selectedDate.value = null
 }
 
-const alarmSettings = ref({ ...defaultSettings })
-
-onMounted(() => {
-  const saved = localStorage.getItem('alarmSettings')
-  if (saved) {
-    alarmSettings.value = JSON.parse(saved)
-  } else {
-    localStorage.setItem('alarmSettings', JSON.stringify(alarmSettings.value))
-  }
-})
-
+// Table headers
 const headers = [
   { title: 'No', key: 'no', width: '50px', align: 'center', sortable: false },
   { title: 'Waktu Alarm', key: 'timestamp' },
   { title: 'Parameter', key: 'parameter', sortable: false },
   { title: 'Nilai Terukur', key: 'value', sortable: false },
   { title: 'Status', key: 'status', sortable: false },
-  // { title: 'Severity', key: 'severity' },
   { title: 'PIR', key: 'pir', sortable: false },
   { title: 'Lokasi', key: 'location', sortable: false },
 ]
 
+// Sample data
 const tableData = ref([
-  {
-    timestamp: '2025-09-12 10:30:00',
-    parameter: 'pH',
-    value: 8,
-    severity: 'Critical',
-    location: 'Outlet 1',
-    pir: 1,
-  },
-  {
-    timestamp: '2025-09-12 09:45:00',
-    parameter: 'cod',
-    value: 40,
-    severity: 'Warning',
-    location: 'Outlet 2',
-    pir: 0,
-  },
-  {
-    timestamp: '2025-09-12 08:20:00',
-    parameter: 'nh3n',
-    value: 2.1,
-    severity: 'Info',
-    location: 'Outlet 1',
-    pir: 1,
-  },
+  { timestamp: '2025-09-12 10:30:00', parameter: 'pH', value: 8, location: 'Outlet 1', pir: 1 },
+  { timestamp: '2025-09-12 09:45:00', parameter: 'cod', value: 40, location: 'Outlet 2', pir: 0 },
+  { timestamp: '2025-09-12 08:20:00', parameter: 'nh3n', value: 2.1, location: 'Outlet 1', pir: 1 },
 ])
 
-const pageCount = computed(() => Math.ceil(tableData.length / itemPerPage.value))
+const pageCount = computed(() => Math.ceil(tableData.value.length / itemPerPage.value))
 
 const processedData = computed(() => {
   return tableData.value.map((row) => {
@@ -201,28 +189,22 @@ const processedData = computed(() => {
       if (row.value < setting.low) status = 'LOW'
       else if (row.value > setting.high) status = 'HIGH'
     }
-    return {
-      ...row,
-      status, // status baru berdasarkan setting
-    }
+    return { ...row, status }
   })
 })
 
-const onClear = () => {
-  selectedDate.value = null
-}
-
+// Color helpers
 const getStatusColor = (status) => {
   if (status === 'HIGH') return 'red'
   if (status === 'LOW') return 'orange'
   return 'green'
 }
-const getPirColor = (pir) => {
-  return pir == 1 ? 'red' : 'green'
-}
+const getPirColor = (pir) => pir === 1 ? 'red' : 'green'
 
+// Dialog logic
 const openDialog = () => {
-  tempSettings.value = JSON.parse(JSON.stringify(alarmSettings.value))
+  const saved = localStorage.getItem(`alarmSettings:${selectedDevice.value}`)
+  tempSettings.value = saved ? JSON.parse(saved) : {}
   dialog.value = true
 }
 
@@ -230,11 +212,56 @@ const cancelDialog = () => {
   dialog.value = false
 }
 
-const saveSettings = () => {
+const saveSettings = async () => {
   alarmSettings.value = JSON.parse(JSON.stringify(tempSettings.value))
-  localStorage.setItem('alarmSettings', JSON.stringify(alarmSettings.value))
+  localStorage.setItem(`alarmSettings:${selectedDevice.value}`, JSON.stringify(alarmSettings.value))
   dialog.value = false
+  await postAlarmSettings()
 }
+
+const postAlarmSettings = async () => {
+  try {
+    const res = await fetch(ALARM_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'test',
+      },
+      body: JSON.stringify({
+        device_id: selectedDevice.value,
+        settings: alarmSettings.value,
+      }),
+    })
+    if (!res.ok) throw new Error(`Server error: ${res.statusText}`)
+    const result = await res.json()
+    console.log('✅ Alarm settings saved:', result)
+  } catch (err) {
+    console.error('❌ Failed to save alarm settings:', err)
+  }
+}
+
+// Validation
+const isValidSettings = computed(() => {
+  const settings = tempSettings.value
+  for (const param in settings) {
+    const { low, high } = settings[param]
+    if (
+      low === null || high === null ||
+      low === '' || high === '' ||
+      isNaN(low) || isNaN(high) ||
+      Number(low) >= Number(high)
+    ) {
+      return false
+    }
+  }
+  return true
+})
+
+// Device change watcher
+watch(selectedDevice, (newDevice) => {
+  const saved = localStorage.getItem(`alarmSettings:${newDevice}`)
+  tempSettings.value = saved ? JSON.parse(saved) : {}
+})
 </script>
 
 <style scoped>
