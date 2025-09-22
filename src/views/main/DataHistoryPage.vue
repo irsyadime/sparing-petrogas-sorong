@@ -41,16 +41,26 @@
               />
             </v-menu>
           </v-col>
-
+          <v-col cols="3">
+            <v-select
+              v-model="selectedDevice"
+              :items="deviceOptions"
+              label="Device"
+              variant="outlined"
+              clearable
+              required
+            />
+          </v-col>
           <v-col cols="4">
-            <v-btn
-              size="x-large"
-              color="#61c134"
-              class="btn-search"
-              @click="fetchDataHistory"
-            >
-              Cari
-            </v-btn>
+          <v-btn
+            size="x-large"
+            color="#61c134"
+            class="btn-search"
+            @click="fetchDataHistory"
+            :disabled="isSearchDisabled"
+          >
+            Cari
+          </v-btn>
           </v-col>
         </v-row>
 
@@ -96,39 +106,41 @@ import timezone from 'dayjs/plugin/timezone'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
-// --- Inject Day.js and set up date refs ---
-//const dayjs = inject('dayjs')
+// --- State ---
 const selectedDate = ref(null)
+const selectedDevice = ref('kmt') // default device
+const deviceOptions = ['kmt', 'matoa']
+
 const formattedDate = computed({
-  get: () =>
-    selectedDate.value
-      ? dayjs(selectedDate.value).format('DD-MMMM-YYYY')
-      : '',
-  set: (v) => {
-    if (!v) selectedDate.value = null
-  },
+  get: () => selectedDate.value ? dayjs(selectedDate.value).format('DD-MMMM-YYYY') : '',
+  set: (v) => { if (!v) selectedDate.value = null }
 })
+
+const isSearchDisabled = computed(() => {
+  return !selectedDate.value || !selectedDevice.value
+})
+
 const onClear = () => {
   selectedDate.value = null
 }
 
-// --- Table & pagination state ---
 const tableData   = ref([])
-const cachedData  = ref({})     // { '2025-09-21': [ …rows… ] }
+const cachedData  = ref({}) // { 'kmt:2025-09-21': [ …rows… ] }
 const itemPerPage = ref(10)
 const page        = ref(1)
 const menu        = ref(false)
-const loading = ref(false)
+const loading     = ref(false)
 
 const headers = [
-  { title: 'No',        value: 'no',     width: '50px', align: 'center' },
+  { title: 'No',        value: 'no',        width: '50px', align: 'center' },
+  { title: 'Device',    value: 'device_id' },
   { title: 'Date Time', value: 'dtime' },
-  { title: 'Debit',     value: 'debit' },
+  { title: 'Flow (m3/jam)',     value: 'debit' },
   { title: 'PH',        value: 'ph' },
-  { title: 'COD',       value: 'cod' },
-  { title: 'NH3N',      value: 'nh3n' },
-  { title: 'Suhu',      value: 'suhu' },
-  { title: 'Totalizer', value: 'volume' },
+  { title: 'COD (mg/L)',       value: 'cod' },
+  { title: 'NH3N (mg/L)',      value: 'nh3n' },
+  { title: 'Suhu (C)',      value: 'suhu' },
+  { title: 'Totalizer (m3)', value: 'volume' },
 ]
 
 const pageCount = computed(() =>
@@ -136,10 +148,11 @@ const pageCount = computed(() =>
 )
 
 // --- LocalStorage keys ---
-const LS_DATE_KEY  = 'dataHistory:selectedDate'
-const LS_CACHE_KEY = 'dataHistory:cachedData'
+const LS_DATE_KEY   = 'dataHistory:selectedDate'
+const LS_DEVICE_KEY = 'dataHistory:selectedDevice'
+const LS_CACHE_KEY  = 'dataHistory:cachedData'
 
-// Persist selectedDate → localStorage
+// --- Watchers ---
 watch(selectedDate, (d) => {
   if (d) {
     localStorage.setItem(LS_DATE_KEY, dayjs(d).format('YYYY-MM-DD'))
@@ -148,14 +161,17 @@ watch(selectedDate, (d) => {
   }
 })
 
-// Persist entire cache → localStorage (deep watch)
-watch(
-  cachedData,
-  (c) => {
-    localStorage.setItem(LS_CACHE_KEY, JSON.stringify(c))
-  },
-  { deep: true }
-)
+watch(selectedDevice, (d) => {
+  if (d) {
+    localStorage.setItem(LS_DEVICE_KEY, d)
+  } else {
+    localStorage.removeItem(LS_DEVICE_KEY)
+  }
+})
+
+watch(cachedData, (c) => {
+  localStorage.setItem(LS_CACHE_KEY, JSON.stringify(c))
+}, { deep: true })
 
 function isToday(dateKey) {
   const todayInJST = dayjs().tz('Asia/Tokyo').format('YYYY-MM-DD')
@@ -164,35 +180,38 @@ function isToday(dateKey) {
 
 // --- Fetch logic ---
 async function fetchDataHistory() {
-  if (!selectedDate.value) return
+  if (!selectedDate.value || !selectedDevice.value) return
 
   const dateKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
+  const cacheKey = `${selectedDevice.value}:${dateKey}`
   page.value = 1
   loading.value = true
 
   try {
-    // Skip cache if it's today
-    if (!isToday(dateKey) && Array.isArray(cachedData.value[dateKey])) {
-      console.log('✅ Using cached data for:', dateKey)
-      tableData.value = cachedData.value[dateKey]
+    if (!isToday(dateKey) && Array.isArray(cachedData.value[cacheKey])) {
+      console.log('✅ Using cached data for:', cacheKey)
+      tableData.value = cachedData.value[cacheKey]
       return
     }
 
-    console.log('🌐 Fetching from API for:', dateKey)
+    console.log('🌐 Fetching from API for:', cacheKey)
     const res = await fetch('http://rumot-vps.com:1880/data-history', {
       method: 'POST',
       headers: {
         Authorization: 'test',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ date: dateKey }),
+      body: JSON.stringify({
+        date: dateKey,
+        device_id: selectedDevice.value,
+      }),
     })
+
     if (!res.ok) throw new Error(res.statusText)
     const data = await res.json()
 
-    // ✅ Only cache if it's NOT today
     if (!isToday(dateKey)) {
-      cachedData.value[dateKey] = Array.isArray(data) ? data : []
+      cachedData.value[cacheKey] = Array.isArray(data) ? data : []
     }
 
     tableData.value = Array.isArray(data) ? data : []
@@ -205,39 +224,37 @@ async function fetchDataHistory() {
 
 // --- Restore & auto-fetch on mount ---
 onMounted(async () => {
-  //console.log('🕒 JST Today on mount:', dayjs().tz('Asia/Tokyo').format())
-  // 1) Restore cache
-  const raw = localStorage.getItem(LS_CACHE_KEY)
-  if (raw) {
+  const rawCache = localStorage.getItem(LS_CACHE_KEY)
+  if (rawCache) {
     try {
-      cachedData.value = JSON.parse(raw)
-      //console.log('✅ Restored cachedData from localStorage')
+      cachedData.value = JSON.parse(rawCache)
     } catch {
       console.warn('⚠️ Could not parse cachedData')
     }
   }
 
-  // 2) Restore date
-  const saved = localStorage.getItem(LS_DATE_KEY)
-  if (saved) {
-    selectedDate.value = dayjs(saved).toDate()
-    //console.log('✅ Restored selectedDate:', saved)
+  const savedDate = localStorage.getItem(LS_DATE_KEY)
+  if (savedDate) {
+    selectedDate.value = dayjs(savedDate).toDate()
   }
 
-  // 3) Wait for Vue to flush reactivity, then decide
+  const savedDevice = localStorage.getItem(LS_DEVICE_KEY)
+  if (savedDevice) {
+    selectedDevice.value = savedDevice
+  }
+
   await nextTick()
 
-if (selectedDate.value) {
-  const dateKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
-  if (!isToday(dateKey) && Array.isArray(cachedData.value[dateKey])) {
-    //console.log('✅ onMounted: using restored cache for', dateKey)
-    tableData.value = cachedData.value[dateKey]
-    page.value = 1
-  } else {
-    //console.log('🌐 onMounted: today or no cache, fetching')
-    fetchDataHistory()
+  if (selectedDate.value && selectedDevice.value) {
+    const dateKey = dayjs(selectedDate.value).format('YYYY-MM-DD')
+    const cacheKey = `${selectedDevice.value}:${dateKey}`
+    if (!isToday(dateKey) && Array.isArray(cachedData.value[cacheKey])) {
+      tableData.value = cachedData.value[cacheKey]
+      page.value = 1
+    } else {
+      fetchDataHistory()
+    }
   }
-}
 })
 </script>
 

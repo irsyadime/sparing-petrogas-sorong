@@ -38,6 +38,7 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('lastSensorData')
       localStorage.removeItem('dataHistory:selectedDate')
       localStorage.removeItem('dataHistory:cachedData')
+      localStorage.removeItem('dataHistory:selectedDevice')
 
       // 🔥 Remove all alarmSettings keys
       Object.keys(localStorage).forEach((key) => {
