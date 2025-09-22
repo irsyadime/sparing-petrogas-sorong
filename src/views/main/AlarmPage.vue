@@ -3,6 +3,14 @@
     <div class="header" style="padding-top: 2rem">
       <h2 class="title" style="font-weight: 800; font-size: 32px">Alarm</h2>
     </div>
+    <v-snackbar
+      v-model="showMessage"
+      timeout="3000"
+      color="green"
+      location="top right"
+    >
+      {{ saveMessage }}
+    </v-snackbar>
     <v-container>
       <v-card elevation="2" class="d-flex flex-column ga-3">
         <v-row class="pt-5 pl-5 pb-0">
@@ -150,6 +158,8 @@ const tempSettings = ref({})
 const alarmSettings = ref({})
 const deviceOptions = ['kmt', 'matoa']
 const ALARM_API_URL = 'http://rumot-vps.com:1880/alarm-settings'
+const saveMessage = ref('')
+const showMessage = ref(false)
 
 // Date formatting
 const formattedDate = computed({
@@ -234,7 +244,8 @@ const postAlarmSettings = async () => {
     })
     if (!res.ok) throw new Error(`Server error: ${res.statusText}`)
     const result = await res.json()
-    console.log('✅ Alarm settings saved:', result)
+    saveMessage.value = result.message || 'Alarm settings saved successfully'
+    showMessage.value = true
   } catch (err) {
     console.error('❌ Failed to save alarm settings:', err)
   }
