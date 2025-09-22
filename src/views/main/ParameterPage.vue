@@ -19,7 +19,7 @@
       <v-col cols="3">
         <v-card elevation="2" style="min-height: 545px">
           <v-card-title class="font-weight-bold">Parameter</v-card-title>
-          <v-card-subtitle>Last updated at : {{timestamp}}</v-card-subtitle>
+          <v-card-subtitle>Last updated at : {{ timestamp }}</v-card-subtitle>
           <v-card-text>
             <div class="d-flex flex-column pl-5 ga-1">
               <v-row>
@@ -27,9 +27,16 @@
                   <p class="font-weight-bold">FLOW</p>
                 </v-col>
                 <v-col cols="6">
-                  <div class="parameter-value">
+                  <!-- <div class="parameter-value">
                     <p class="pa-3" style="color: white">{{ flow }}</p>
-                  </div>
+                  </div> -->
+                  <AlarmBox
+                    :value="flow"
+                    name="flow"
+                    :status="alarmStatus.flow"
+                    unit="m3/jam"
+                    v-model:status="alarmStatus.flow"
+                  />
                 </v-col>
               </v-row>
               <v-row>
@@ -91,7 +98,11 @@
           <v-card-title class="font-weight-bold">FLOW</v-card-title>
           <v-card-subtitle>Last updated at:{{ today }} {{ time }}</v-card-subtitle>
           <v-card-text class="d-flex h-100">
-            <LineChart v-if="flowChartData.labels.length" :chart-data="flowChartData" height="360px" />
+            <LineChart
+              v-if="flowChartData.labels.length"
+              :chart-data="flowChartData"
+              height="360px"
+            />
           </v-card-text>
         </v-card>
       </v-col>
@@ -106,19 +117,31 @@
           <v-card elevation="2" class="mb-4">
             <v-card-title class="font-weight-bold">COD</v-card-title>
             <v-card-text>
-              <LineChart v-if="codChartData.labels.length" :chart-data="codChartData" height="60px" />
+              <LineChart
+                v-if="codChartData.labels.length"
+                :chart-data="codChartData"
+                height="60px"
+              />
             </v-card-text>
           </v-card>
           <v-card elevation="2" class="mb-4">
             <v-card-title class="font-weight-bold">NH3-N</v-card-title>
             <v-card-text>
-              <LineChart v-if="nh3nChartData.labels.length" :chart-data="nh3nChartData" height="60px" />
+              <LineChart
+                v-if="nh3nChartData.labels.length"
+                :chart-data="nh3nChartData"
+                height="60px"
+              />
             </v-card-text>
           </v-card>
           <v-card elevation="2" class="mb-4">
             <v-card-title class="font-weight-bold">TEMP</v-card-title>
             <v-card-text>
-              <LineChart v-if="tempChartData.labels.length" :chart-data="tempChartData" height="60px" />
+              <LineChart
+                v-if="tempChartData.labels.length"
+                :chart-data="tempChartData"
+                height="60px"
+              />
             </v-card-text>
           </v-card>
         </div>
@@ -131,6 +154,7 @@
 import { ref, onMounted, onBeforeUnmount, inject } from 'vue'
 import axios from 'axios'
 import LineChart from '@/components/charts/LineChart.vue'
+import AlarmBox from '@/components/AlarmBox.vue'
 
 // ⏰ Time setup
 const dayjs = inject('dayjs')
@@ -201,7 +225,7 @@ function connectWebSocket() {
   socket = new WebSocket('ws://rumot-vps.com:1880/ws_petrogas/kmt_sensor')
   socket.onmessage = (event) => {
     const payload = JSON.parse(event.data)
-    flow.value = `${payload.debit} m3/jam`
+    flow.value = `${payload.debit}`
     ph.value = `${payload.ph}`
     cod.value = `${payload.cod} mg/L`
     nh3n.value = `${payload.nh3n} mg/L`
@@ -216,7 +240,7 @@ function connectWebSocket() {
 const cached = localStorage.getItem('lastSensorData')
 if (cached) {
   const payload = JSON.parse(cached)
-  flow.value = `${payload.debit} m3/jam`
+  flow.value = `${payload.debit}`
   ph.value = payload.ph
   cod.value = `${payload.cod} mg/L`
   nh3n.value = `${payload.nh3n} mg/L`
@@ -243,7 +267,8 @@ async function fetchChartData() {
     })
 
     const apiData = response.data
-    const labels = apiData.map(item => item.dtime)
+    const labels = apiData.map((item) => item.dtime)
+    // console.log('chart data:', apiData)
 
     flowChartData.value = {
       labels,
@@ -254,7 +279,7 @@ async function fetchChartData() {
           pointHoverRadius: 3,
           backgroundColor: 'rgb(255, 255, 255)',
           borderColor: '#3F7EBD',
-          data: apiData.map(item => item.debit),
+          data: apiData.map((item) => item.debit),
         },
       ],
     }
@@ -268,7 +293,7 @@ async function fetchChartData() {
           pointHoverRadius: 3,
           backgroundColor: 'rgb(255, 255, 255)',
           borderColor: '#8E44AD',
-          data: apiData.map(item => item.ph),
+          data: apiData.map((item) => item.ph),
         },
       ],
     }
@@ -282,7 +307,7 @@ async function fetchChartData() {
           pointHoverRadius: 3,
           backgroundColor: 'rgb(255, 255, 255)',
           borderColor: '#E67E22',
-          data: apiData.map(item => item.cod),
+          data: apiData.map((item) => item.cod),
         },
       ],
     }
@@ -296,7 +321,7 @@ async function fetchChartData() {
           pointHoverRadius: 3,
           backgroundColor: 'rgb(255, 255, 255)',
           borderColor: '#27AE60',
-          data: apiData.map(item => item.nh3n),
+          data: apiData.map((item) => item.nh3n),
         },
       ],
     }
@@ -310,15 +335,31 @@ async function fetchChartData() {
           pointHoverRadius: 3,
           backgroundColor: 'rgb(255, 255, 255)',
           borderColor: '#3498DB',
-          data: apiData.map(item => item.suhu),
+          data: apiData.map((item) => item.suhu),
         },
       ],
     }
-
   } catch (error) {
     console.error('Chart API error:', error)
   }
 }
+
+//alarm
+const alarmStatus = ref({
+  flow: 'off',
+  ph: 'off',
+  cod: 'off',
+  nh3n: 'off',
+  temp: 'off',
+  totalizer: 'off',
+  pir: 'off',
+})
+
+// const triggerAlarm = () => {
+//   setTimeout(() => {
+//     alarmStatus.value.flow = 'on'
+//   }, 3000)
+// }
 
 // 🚀 Lifecycle
 onMounted(() => {
@@ -328,6 +369,7 @@ onMounted(() => {
   fetchChartData()
   setInterval(fetchChartData, 60000)
   setInterval(fetchWeather, 600000)
+  // triggerAlarm()
 })
 
 onBeforeUnmount(() => {
@@ -335,7 +377,6 @@ onBeforeUnmount(() => {
   if (clockInterval) clearInterval(clockInterval)
 })
 </script>
-
 
 <style scoped>
 .date-container {

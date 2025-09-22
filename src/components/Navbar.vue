@@ -6,7 +6,7 @@
     <div class="navbar-right">
       <div class="user-dropdown" @click="toggleDropdown">
         <span class="user-info">
-          👤 Welcome, User
+          👤 Welcome, {{ username }}
           <span class="arrow">{{ dropdownOpen ? '▾' : '▸' }}</span>
         </span>
         <div v-if="dropdownOpen" class="dropdown-menu">
@@ -24,6 +24,7 @@ import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
+const username = auth.user.username || 'User'
 
 const pageTitle = 'SPARING KLHK DASHBOARD'
 

@@ -1,7 +1,9 @@
 <template>
   <footer class="footer">
     <div class="footer-content">
-      <p>© {{ currentYear }} <span class="footer-link"> petrogas </span>. All rights reserved.</p>
+      <p>
+        © {{ currentYear }} <span class="footer-link"> Rumah Otomatis </span>. All rights reserved.
+      </p>
     </div>
   </footer>
 </template>
