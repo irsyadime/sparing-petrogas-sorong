@@ -19,6 +19,25 @@ import {
 
 ChartJS.register(Title, Tooltip, Legend, LineElement, PointElement, CategoryScale, LinearScale)
 
+const props = defineProps({
+  chartData: {
+    type: Object,
+    required: true,
+  },
+  height: {
+    type: String,
+    default: '150px',
+  },
+    yMin: {
+    type: Number,
+    default: undefined, // Only apply if provided
+  },
+  yMax: {
+    type: Number,
+    default: undefined,
+  },
+})
+
 const chartOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -37,6 +56,8 @@ const chartOptions = {
       },
     },
     y: {
+      min: props.yMin ?? undefined,
+      max: props.yMax ?? undefined,
       ticks: {
         color: '#00000',
       },
@@ -46,17 +67,6 @@ const chartOptions = {
     },
   },
 }
-
-const props = defineProps({
-  chartData: {
-    type: Object,
-    required: true,
-  },
-  height: {
-    type: String,
-    default: '150px',
-  },
-})
 </script>
 
 <style></style>
