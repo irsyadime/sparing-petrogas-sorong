@@ -2,7 +2,7 @@
   <div class="container">
     <div class="page-header">
       <div class="date-container">
-        <h2 class="date-text" style="font-weight: 800; font-size: 32px">Sorong</h2>
+        <h2 class="date-text" style="font-weight: 800; font-size: 32px">KMT</h2>
         <h2 class="date-text" style="font-weight: 800; font-size: 48px">{{ time }}</h2>
         <h2 class="date-text" style="font-weight: 400; font-size: 20px">{{ today }}</h2>
       </div>
@@ -34,7 +34,7 @@
                     :value="flow"
                     name="flow"
                     :status="alarmStatus.flow"
-                    unit="m3/jam"
+                    unit="m3/menit"
                     v-model:status="alarmStatus.flow"
                   />
                 </v-col>
@@ -111,7 +111,7 @@
           <v-card elevation="2" class="mb-4">
             <v-card-title class="font-weight-bold">PH</v-card-title>
             <v-card-text>
-              <LineChart v-if="phChartData.labels.length" :chart-data="phChartData" height="60px" />
+              <LineChart v-if="phChartData.labels.length" :chart-data="phChartData" height="60px" :yMin="0" />
             </v-card-text>
           </v-card>
           <v-card elevation="2" class="mb-4">
@@ -213,7 +213,7 @@ async function fetchWeather() {
 
 // 📡 WebSocket sensor values
 let socket = null
-const flow = ref('0.000 m3/jam')
+const flow = ref('0.000 m3/menit')
 const ph = ref('0.00')
 const cod = ref('0.00 mg/L')
 const nh3n = ref('0.00 mg/L')
@@ -232,12 +232,12 @@ function connectWebSocket() {
     temp.value = `${payload.suhu} °C`
     volume.value = `${payload.Totalizer} m3`
     timestamp.value = payload.timestamp
-    localStorage.setItem('lastSensorData', JSON.stringify(payload))
+    localStorage.setItem('lastSensorData:kmt', JSON.stringify(payload))
   }
 }
 
 // 💾 Load cached sensor data
-const cached = localStorage.getItem('lastSensorData')
+const cached = localStorage.getItem('lastSensorData:kmt')
 if (cached) {
   const payload = JSON.parse(cached)
   flow.value = `${payload.debit}`
@@ -260,7 +260,7 @@ async function fetchChartData() {
   const token = 'test' // Replace with actual token
 
   try {
-    const response = await axios.get('http://rumot-vps.com:1880/graphtoday', {
+    const response = await axios.get('http://rumot-vps.com:1880/graphtoday_kmt', {
       headers: {
         Authorization: `${token}`,
       },

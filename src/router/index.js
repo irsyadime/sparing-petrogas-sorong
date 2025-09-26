@@ -4,8 +4,10 @@ import ManageUserPage from '@/views/account/ManageUserPage.vue'
 import Login from '@/views/auth/Login.vue'
 import AlarmPage from '@/views/main/AlarmPage.vue'
 import DataHistoryPage from '@/views/main/DataHistoryPage.vue'
-import ParameterPage from '@/views/main/ParameterPage.vue'
+import ParameterPageMatoa from '@/views/main/ParameterPageMatoa.vue'
+import ParameterPageKmt from '@/views/main/ParameterPageKmt.vue'
 import { createRouter, createWebHistory } from 'vue-router'
+import { name } from 'dayjs/locale/id'
 
 const routes = [
   {
@@ -13,19 +15,25 @@ const routes = [
     component: MainLayout,
     children: [
       {
-        path: '',
-        name: 'parameter',
-        component: ParameterPage,
+        path: 'parameter-matoa',
+        name: 'parameter-matoa',
+        component: ParameterPageMatoa,
         meta: { title: 'Parameter' },
       },
       {
-        path: '/datahistory',
+        path: 'parameter-kmt',
+        name: 'parameter-kmt',
+        component: ParameterPageKmt,
+        meta: { title: 'Parameter KMT'},
+      },
+      {
+        path: 'datahistory',
         name: 'datahistory',
         component: DataHistoryPage,
         meta: { title: 'Data History' },
       },
       {
-        path: '/alarm',
+        path: 'alarm',
         name: 'alarm',
         component: AlarmPage,
         meta: { title: 'Alarm' },
