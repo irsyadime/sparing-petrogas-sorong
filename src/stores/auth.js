@@ -35,7 +35,8 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null
       localStorage.removeItem('user')
-      localStorage.removeItem('lastSensorData')
+      localStorage.removeItem('lastSensorData:kmt')
+      localStorage.removeItem('lastSensorData:matoa')
       localStorage.removeItem('dataHistory:selectedDate')
       localStorage.removeItem('dataHistory:cachedData')
       localStorage.removeItem('dataHistory:selectedDevice')
