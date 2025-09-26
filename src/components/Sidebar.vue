@@ -65,7 +65,8 @@ const menuSections = [
   {
     label: 'Main Navigation',
     children: [
-      { icon: '🖥️', label: 'Parameter', to: '/' },
+      { icon: '🖥️', label: 'Parameter Matoa', to: '/parameter-matoa' },
+      { icon: '🖥️', label: 'Parameter KMT', to: '/parameter-kmt' },
       { icon: '📊', label: 'Data History', to: '/datahistory' },
       { icon: '🔔', label: 'Alarm', to: '/alarm' },
     ],
