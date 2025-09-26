@@ -53,7 +53,7 @@ const login = () => {
     console.log('Login dengan', username.value, password.value)
     auth.login(username.value)
     // lanjutkan proses login
-    router.push('/')
+    router.push('/parameter-matoa')
   }
 }
 </script>
