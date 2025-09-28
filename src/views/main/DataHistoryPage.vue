@@ -61,6 +61,15 @@
           >
             Cari
           </v-btn>
+          <v-btn
+            size="x-large"
+            color="#2196f3"
+            class="ml-4"
+            :disabled="tableData.length === 0"
+            @click="downloadCSV"
+          >
+            Download CSV
+          </v-btn>
           </v-col>
         </v-row>
 
@@ -220,6 +229,30 @@ async function fetchDataHistory() {
   } finally {
     loading.value = false
   }
+}
+
+function downloadCSV() {
+  if (!selectedDate.value || !selectedDevice.value || tableData.value.length === 0) return;
+
+  const dateStr = dayjs(selectedDate.value).format('YYYY-MM-DD');
+  const filename = `${selectedDevice.value}_${dateStr}.csv`;
+
+  const columns = headers.map(h => h.title);
+  const keys = headers.map(h => h.value);
+
+  const rows = tableData.value.map(row =>
+    keys.map(key => `"${row[key] ?? ''}"`).join(',')
+  );
+
+  const csvContent = [columns.join(','), ...rows].join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+
+  link.href = URL.createObjectURL(blob);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 // --- Restore & auto-fetch on mount ---
