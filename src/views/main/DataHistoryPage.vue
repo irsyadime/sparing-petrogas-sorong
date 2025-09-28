@@ -144,7 +144,7 @@ const headers = [
   { title: 'No',        value: 'no',        width: '50px', align: 'center' },
   { title: 'Device',    value: 'device_id' },
   { title: 'Date Time', value: 'dtime' },
-  { title: 'Flow (m3/jam)',     value: 'debit' },
+  { title: 'Flow (m3/menit)',     value: 'debit' },
   { title: 'PH',        value: 'ph' },
   { title: 'COD (mg/L)',       value: 'cod' },
   { title: 'NH3N (mg/L)',      value: 'nh3n' },
