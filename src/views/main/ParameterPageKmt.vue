@@ -121,6 +121,7 @@
                 v-if="codChartData.labels.length"
                 :chart-data="codChartData"
                 height="60px"
+                :yMin ="0"
               />
             </v-card-text>
           </v-card>
