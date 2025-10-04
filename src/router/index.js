@@ -72,8 +72,11 @@ router.beforeEach((to, from, next) => {
   if (!auth.user) {
     auth.loadUserFromStorage()
   }
+
   if (to.name !== 'login' && !auth.user) {
     next({ name: 'login' })
+  } else if (to.path === '/') {
+    next({ name: 'parameter-matoa' })
   } else {
     next()
   }

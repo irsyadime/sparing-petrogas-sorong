@@ -155,17 +155,24 @@ import { ref, onMounted, onBeforeUnmount, inject } from 'vue'
 import axios from 'axios'
 import LineChart from '@/components/charts/LineChart.vue'
 import AlarmBox from '@/components/AlarmBox.vue'
+import dayjs from 'dayjs'
+import utc from 'dayjs/plugin/utc'
+import timezone from 'dayjs/plugin/timezone'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 // ⏰ Time setup
-const dayjs = inject('dayjs')
-const time = ref(dayjs().add(2, 'hour').format('HH:mm'))
-const today = ref(dayjs().add(2, 'hour').format('dddd, D MMMM YYYY'))
+//const dayjs = inject('dayjs')
+const time = ref(dayjs().tz('Asia/Jayapura').format('HH:mm'))
+const today = ref(dayjs().tz('Asia/Jayapura').format('dddd, D MMMM YYYY'))
 let clockInterval = null
 
 function startClock() {
   const updateTime = () => {
-    time.value = dayjs().add(2, 'hour').format('HH:mm')
-    today.value = dayjs().add(2, 'hour').format('dddd, D MMMM YYYY')
+    const nowInWIT = dayjs().tz('Asia/Jayapura')
+    time.value = nowInWIT.format('HH:mm')
+    today.value = nowInWIT.format('dddd, D MMMM YYYY')
   }
 
   updateTime()
